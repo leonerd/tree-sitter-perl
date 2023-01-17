@@ -199,9 +199,9 @@ module.exports = grammar({
     ),
     /* ensure that an entire list expression's contents appear in one big flat
     * list, while permitting multiple internal commas and an optional trailing one */
-    list_expression: $ => seq(
+    list_expression: $ => prec.right(TERMPREC.LSTOP, seq(
       $._term, $._PERLY_COMMA, repeat(seq(optional($._term), $._PERLY_COMMA)), optional($._term)
-    ),
+    )),
 
     _subscripted: $ => choice(
       /* TODO:
@@ -429,16 +429,16 @@ module.exports = grammar({
        */
       $.method_call_expression,
       /* METHCALL0 indirob optlistexpr
-       * METHCALL indirb '(' optexpr ')'
-       * LSTOP optlistexpr
-       * LSTOPSUB block optlistexpr
+       * METHCALL indirb '(' optexpr ')' */
+      $.listop_call_expression,
+      /* LSTOPSUB block optlistexpr
        */
       $.function_call_expression,
     ),
 
     function_call_expression: $ =>
       seq(field('function', $.function), '(', optional(field('arguments', $._expr)), ')'),
-    function: $ => $._FUNC,
+    function: $ => prec(2, $._bareword),
 
     method_call_expression: $ => prec.left(TERMPREC.ARROW, seq(
       field('invocant', $._term),
@@ -447,6 +447,16 @@ module.exports = grammar({
       optseq('(', optional(field('arguments', $._expr)), ')')
     )),
     method: $ => choice($._METHCALL0, $.scalar),
+
+    listop_call_expression: $ => prec.left(TERMPREC.LSTOP, seq(
+      field('function', $.listop),
+      /* don't use listexpr */
+      optional(field('arguments', $._listop_args)),
+    )),
+
+    _listop_args: $ => prec.left(TERMPREC.LSTOP + 1,
+      seq($._term, repeat(seq($._PERLY_COMMA, optional($._term))))
+    ),
 
     scalar:   $ => seq('$',  $._indirob),
     array:    $ => seq('@',  $._indirob),
@@ -527,6 +537,27 @@ module.exports = grammar({
       'tell', 'telldir', 'tied', 'uc', 'ucfirst', 'untie', 'undef', 'umask',
       'values', 'write',
       /* TODO: all the set*ent */
+    ),
+
+    // Anything token.c calls LOP
+    listop: $ => choice(
+      'accept', 'atan2', 'bind', 'binmode', 'bless', 'crypt', 'chmod', 'chown',
+      'connect', 'die', 'dbmopen', 'exec', 'fcntl', 'flock', 'getpriority',
+      'getprotobynumber', 'gethostbyaddr', 'getnetbyaddr', 'getservbyname',
+      'getservbyport', 'getsockopt', 'glob', 'index', 'ioctl', 'join', 'kill',
+      'link', 'listen', 'mkdir', 'msgctl', 'msgget', 'msgrcv', 'msgsend',
+      'opendir', 'print', 'printf', 'push', 'pack', 'pipe', 'return', 'rename',
+      'rindex', 'read', 'recv', 'reverse', 'say', 'select', 'seek', 'semctl',
+      'semget', 'semop', 'send', 'setpgrp', 'setpriority', 'seekdir',
+      'setsockopt', 'shmctl', 'shmread', 'shmwrite', 'shutdown', 'socket',
+      'socketpair', 'split', 'sprintf', 'splice', 'substr', 'system',
+      'symlink', 'syscall', 'sysopen', 'sysseek', 'sysread', 'syswrite', 'tie',
+      'truncate', 'unlink', 'unpack', 'utime', 'unshift', 'vec', 'warn',
+      'waitpid',
+      /* formline
+       * grep, map
+       * open
+       * sort */
     ),
 
     /****

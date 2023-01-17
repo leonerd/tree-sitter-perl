@@ -51,3 +51,17 @@ shift @arr;
 keys %hash
 # <- function.builtin
 #    ^ variable.hash
+#
+### LSTFUNCs
+die "Broken";
+# <- function.builtin
+#   ^ string
+join ",", @values;
+# <- function.builtin
+#    ^ string
+#         ^ variable.array
+return 1, 2, 3;
+# <- function.builtin
+#      ^ number
+#         ^ number
+#            ^ number

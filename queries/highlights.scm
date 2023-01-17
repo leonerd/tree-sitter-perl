@@ -62,3 +62,4 @@
 
 (func0op_call_expression function: (_) @function.builtin)
 (func1op_call_expression function: (_) @function.builtin)
+(listop_call_expression  function: (_) @function.builtin)
